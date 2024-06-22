@@ -1,0 +1,43 @@
+import yt_dlp as youtube_dl
+import sys
+import json
+import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+cache_dir = 'cache'
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+
+def extract_info(url):
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': os.path.join(cache_dir, '%(id)s.%(ext)s'),
+        'logger': logging,
+        'ffmpeg_location': r'PATH TO FFMPEG',  # Add the path to your ffmpeg binary if necessary,
+        'noplaylist': True,
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        audio_file = ydl.prepare_filename(info).replace('.webm', '.mp3').replace('.m4a', '.mp3')
+
+        song_info = {
+            'title': info.get('title', 'Unknown Title'),
+            'file': audio_file,
+            'webpage_url': info.get('webpage_url', url),
+            'duration': info.get('duration', 0),
+            'thumbnail': info.get('thumbnail', '')
+        }
+        return song_info
+
+if __name__ == "__main__":
+    url = sys.argv[1]
+    song_info = extract_info(url)
+    print(json.dumps(song_info))
